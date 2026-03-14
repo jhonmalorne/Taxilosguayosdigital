@@ -4,185 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Taxi Comunidad Los Guayos - Gestión en Tiempo Real</title>
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body {
-            background: #1a1a2e;
-            color: #e0e0e0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        header {
-            background: #16213e;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        header h1 {
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        header h1 i {
-            color: #f0a500;
-        }
-        .user-panel {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .user-panel button {
-            background: #f0a500;
-            border: none;
-            color: #16213e;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .user-panel button:hover {
-            background: #ffb727;
-            transform: scale(1.05);
-        }
-        .user-panel button.danger {
-            background: #e94560;
-            color: white;
-        }
-        .user-panel button.danger:hover {
-            background: #ff6b8b;
-        }
-        .status {
-            background: #0f3460;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-        }
-        .status i {
-            margin-right: 5px;
-            color: #4caf50;
-        }
-        main {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-        #map {
-            flex: 3;
-            height: 100%;
-            background: #222;
-        }
-        .sidebar {
-            flex: 1;
-            background: #16213e;
-            padding: 1.5rem;
-            overflow-y: auto;
-            border-left: 1px solid #0f3460;
-        }
-        .sidebar h2 {
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.3rem;
-            color: #f0a500;
-        }
-        .taxi-list {
-            list-style: none;
-        }
-        .taxi-item {
-            background: #0f3460;
-            margin-bottom: 10px;
-            padding: 12px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: 0.2s;
-            border-left: 4px solid #f0a500;
-        }
-        .taxi-item .avatar {
-            background: #f0a500;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #16213e;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        .taxi-item .info {
-            flex: 1;
-        }
-        .taxi-item .info .name {
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-        .taxi-item .info .coords {
-            font-size: 0.8rem;
-            color: #aaa;
-        }
-        .taxi-item .time {
-            font-size: 0.7rem;
-            color: #f0a500;
-        }
-        .taxi-item.own {
-            border-left-color: #4caf50;
-            background: #1a2a4a;
-        }
-        .footer-info {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #0f3460;
-            font-size: 0.8rem;
-            text-align: center;
-            color: #888;
-        }
-        .footer-info a {
-            color: #f0a500;
-            text-decoration: none;
-        }
-        .leaflet-popup-content {
-            color: #16213e;
-        }
-        @media (max-width: 768px) {
-            main {
-                flex-direction: column;
-            }
-            #map {
-                height: 60vh;
-            }
-            .sidebar {
-                height: 40vh;
-            }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
+        header { background: #16213e; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        header h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        header h1 i { color: #f0a500; }
+        .user-panel { display: flex; align-items: center; gap: 15px; }
+        .user-panel button { background: #f0a500; border: none; color: #16213e; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
+        .user-panel button:hover { background: #ffb727; transform: scale(1.05); }
+        .user-panel button.danger { background: #e94560; color: white; }
+        .user-panel button.danger:hover { background: #ff6b8b; }
+        .status { background: #0f3460; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; }
+        .status i { margin-right: 5px; color: #4caf50; }
+        main { display: flex; flex: 1; overflow: hidden; }
+        #map { flex: 3; height: 100%; background: #222; }
+        .sidebar { flex: 1; background: #16213e; padding: 1.5rem; overflow-y: auto; border-left: 1px solid #0f3460; }
+        .sidebar h2 { margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; font-size: 1.3rem; color: #f0a500; }
+        .taxi-list { list-style: none; }
+        .taxi-item { background: #0f3460; margin-bottom: 10px; padding: 12px; border-radius: 10px; display: flex; align-items: center; gap: 12px; transition: 0.2s; border-left: 4px solid #f0a500; }
+        .taxi-item .avatar { background: #f0a500; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #16213e; font-weight: bold; font-size: 1.2rem; }
+        .taxi-item .info { flex: 1; }
+        .taxi-item .info .name { font-weight: bold; margin-bottom: 4px; }
+        .taxi-item .info .coords { font-size: 0.8rem; color: #aaa; }
+        .taxi-item .time { font-size: 0.7rem; color: #f0a500; }
+        .taxi-item.own { border-left-color: #4caf50; background: #1a2a4a; }
+        .footer-info { margin-top: 20px; padding-top: 15px; border-top: 1px solid #0f3460; font-size: 0.8rem; text-align: center; color: #888; }
+        .footer-info a { color: #f0a500; text-decoration: none; }
+        .leaflet-popup-content { color: #16213e; }
+        @media (max-width: 768px) { main { flex-direction: column; } #map { height: 60vh; } .sidebar { height: 40vh; } }
     </style>
 </head>
 <body>
     <header>
-        <h1><i class="fas fa-taxi"></i> Taxi Comunidad Los Guayos · Tiempo Real</h1>
+        <h1><i class="fas fa-taxi"></i> Taxi Comunidad Los Guayos</h1>
         <div class="user-panel">
             <div class="status" id="status"><i class="fas fa-circle"></i> Conectando...</div>
-            <button id="registerBtn"><i class="fas fa-user-plus"></i> Registrarme como taxi</button>
-            <button id="stopBtn" class="danger" style="display: none;"><i class="fas fa-stop-circle"></i> Dejar de compartir</button>
+            <button id="registerBtn"><i class="fas fa-user-plus"></i> Conectar como taxi</button>
+            <button id="stopBtn" class="danger" style="display: none;"><i class="fas fa-stop-circle"></i> Desconectar</button>
         </div>
     </header>
     <main>
@@ -193,86 +54,65 @@
                 <li style="text-align: center; color: #888;">Esperando datos...</li>
             </ul>
             <div class="footer-info">
-                <i class="fas fa-map-marker-alt"></i> Actualización en tiempo real · <a href="#" id="centerMap">Centrar en mi ubicación</a>
+                <i class="fas fa-map-marker-alt"></i> Actualización en tiempo real <br><br> <a href="#" id="centerMap">Centrar en mi ubicación</a>
             </div>
         </div>
     </main>
 
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Importar Firebase como módulo -->
+    
     <script type="module">
-        // ================= CONFIGURACIÓN DE FIREBASE (Tus datos) =================
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
-        import { getDatabase, ref, onValue, set, off, push, update, remove } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
+        // Configuración corregida (API Key con cero y base de datos incluida)
         const firebaseConfig = {
-            apiKey: "AIzaSyDuDZ_uxF6P5OSc_0z7nuC0X_E98hPNsug",
+            apiKey: "AIzaSyDuDZ_uxF6P50Sc_0z7nuC0X_E98hPNsug", 
             authDomain: "taxi-comunidad-los-guayos.firebaseapp.com",
+            databaseURL: "https://taxi-comunidad-los-guayos-default-rtdb.firebaseio.com",
             projectId: "taxi-comunidad-los-guayos",
             storageBucket: "taxi-comunidad-los-guayos.firebasestorage.app",
             messagingSenderId: "178697721594",
-            appId: "1:178697721594:web:69981a06c9b305c6811b43",
-            measurementId: "G-5HJPLK3BRJ"
+            appId: "1:178697721594:web:69981a06c9b305c6811b43"
         };
 
-        // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
         const db = getDatabase(app);
         const auth = getAuth(app);
 
-        // ================= VARIABLES GLOBALES =================
-        let map;
-        let userMarker = null;          // Marcador del propio taxi (si está registrado)
-        let watchId = null;             // ID del watchPosition para limpiar
-        let currentUser = null;          // Objeto usuario de Firebase Auth
-        let markers = {};                // Diccionario de marcadores de otros taxis { uid: marker }
-        let taxiListElement = document.getElementById('taxiList');
-        let registerBtn = document.getElementById('registerBtn');
-        let stopBtn = document.getElementById('stopBtn');
-        let statusDiv = document.getElementById('status');
-        let centerMapLink = document.getElementById('centerMap');
+        let map, userMarker = null, watchId = null, currentUser = null, markers = {};
+        const taxiListElement = document.getElementById('taxiList');
+        const registerBtn = document.getElementById('registerBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusDiv = document.getElementById('status');
 
-        // ================= INICIALIZAR MAPA =================
-        function initMap(lat = 10.0, lng = -67.0) { // Coordenadas aproximadas de Los Guayos, Carabobo, Venezuela
-            map = L.map('map').setView([lat, lng], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
+        function initMap() { 
+            map = L.map('map').setView([10.18, -67.93], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         }
+        initMap();
 
-        // Iniciar mapa con ubicación aproximada (si el navegador lo permite, se centrará después)
-        initMap(10.0, -67.0); // Por defecto Los Guayos (ajusta si es necesario)
-
-        // ================= FUNCIÓN PARA ACTUALIZAR LA LISTA DE TAXIS EN EL PANEL =================
         function updateTaxiList(taxisData) {
             if (!taxisData) {
                 taxiListElement.innerHTML = '<li style="text-align: center; color: #888;">No hay taxis activos</li>';
                 return;
             }
-
             let html = '';
-            const now = Date.now();
-            // Ordenar por última actualización (más reciente primero)
             const sorted = Object.entries(taxisData).sort((a, b) => (b[1].lastUpdate || 0) - (a[1].lastUpdate || 0));
 
             for (let [uid, taxi] of sorted) {
                 const isOwn = currentUser && uid === currentUser.uid;
                 const lastUpdate = taxi.lastUpdate ? new Date(taxi.lastUpdate).toLocaleTimeString() : 'desconocido';
-                const lat = taxi.lat?.toFixed(5) || '?';
-                const lng = taxi.lng?.toFixed(5) || '?';
-                const name = taxi.name || 'Taxi ' + uid.substr(0, 4);
+                const name = taxi.name || 'Taxi';
                 const avatarLetter = name.charAt(0).toUpperCase();
 
                 html += `
-                    <li class="taxi-item ${isOwn ? 'own' : ''}" data-uid="${uid}">
+                    <li class="taxi-item ${isOwn ? 'own' : ''}">
                         <div class="avatar">${avatarLetter}</div>
                         <div class="info">
                             <div class="name">${name} ${isOwn ? '(tú)' : ''}</div>
-                            <div class="coords">${lat}, ${lng}</div>
+                            <div class="coords">${taxi.lat.toFixed(4)}, ${taxi.lng.toFixed(4)}</div>
                         </div>
                         <div class="time">${lastUpdate}</div>
                     </li>
@@ -281,181 +121,90 @@
             taxiListElement.innerHTML = html;
         }
 
-        // ================= ESCUCHAR CAMBIOS EN LA BASE DE DATOS (todos los taxis) =================
         const taxisRef = ref(db, 'taxis');
         onValue(taxisRef, (snapshot) => {
             const data = snapshot.val();
             updateTaxiList(data);
 
-            // Sincronizar marcadores en el mapa
             if (data) {
-                // Eliminar marcadores de taxis que ya no existen
                 for (let uid in markers) {
-                    if (!data[uid]) {
-                        map.removeLayer(markers[uid]);
-                        delete markers[uid];
-                    }
+                    if (!data[uid]) { map.removeLayer(markers[uid]); delete markers[uid]; }
                 }
-                // Actualizar o agregar marcadores
                 for (let uid in data) {
                     const taxi = data[uid];
-                    if (uid === currentUser?.uid) {
-                        // El marcador del usuario se maneja aparte (userMarker)
-                        continue;
-                    }
+                    if (uid === currentUser?.uid) continue;
+                    
                     if (markers[uid]) {
-                        // Actualizar posición
                         markers[uid].setLatLng([taxi.lat, taxi.lng]);
-                        // Actualizar popup si está abierto (opcional)
                     } else {
-                        // Crear nuevo marcador
-                        const marker = L.marker([taxi.lat, taxi.lng]).addTo(map)
-                            .bindPopup(`<b>${taxi.name || 'Taxi'}</b><br>Última actualización: ${new Date(taxi.lastUpdate).toLocaleTimeString()}`);
+                        const marker = L.marker([taxi.lat, taxi.lng]).addTo(map).bindPopup(`<b>${taxi.name}</b>`);
                         markers[uid] = marker;
                     }
                 }
             } else {
-                // No hay datos, eliminar todos los marcadores
-                for (let uid in markers) {
-                    map.removeLayer(markers[uid]);
-                }
+                for (let uid in markers) map.removeLayer(markers[uid]);
                 markers = {};
             }
         });
 
-        // ================= AUTENTICACIÓN ANÓNIMA =================
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
-                statusDiv.innerHTML = '<i class="fas fa-circle" style="color: #4caf50;"></i> Autenticado';
+                statusDiv.innerHTML = '<i class="fas fa-circle" style="color: #4caf50;"></i> Conectado';
                 registerBtn.style.display = 'none';
                 stopBtn.style.display = 'flex';
-                // Intentar comenzar a compartir ubicación automáticamente (si hay permisos)
                 startSharingLocation();
             } else {
                 currentUser = null;
-                statusDiv.innerHTML = '<i class="fas fa-circle"></i> No autenticado';
+                statusDiv.innerHTML = '<i class="fas fa-circle"></i> Desconectado';
                 registerBtn.style.display = 'flex';
                 stopBtn.style.display = 'none';
-                // Eliminar marcador propio del mapa si existe
-                if (userMarker) {
-                    map.removeLayer(userMarker);
-                    userMarker = null;
-                }
-                // Dejar de escuchar geolocalización
-                if (watchId) {
-                    navigator.geolocation.clearWatch(watchId);
-                    watchId = null;
-                }
+                if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
+                if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; }
             }
         });
 
-        // ================= REGISTRARSE COMO TAXI =================
         registerBtn.addEventListener('click', () => {
-            signInAnonymously(auth).catch(error => {
-                alert('Error al autenticar: ' + error.message);
-            });
+            signInAnonymously(auth).catch(error => alert('Error: ' + error.message));
         });
 
-        // ================= DEJAR DE COMPARTIR UBICACIÓN =================
         stopBtn.addEventListener('click', () => {
             if (currentUser) {
-                // Eliminar el nodo del usuario de la base de datos
-                const userRef = ref(db, `taxis/${currentUser.uid}`);
-                remove(userRef).then(() => {
-                    console.log('Taxi eliminado');
-                }).catch(err => console.error(err));
-                // Cerrar sesión (opcional, también se puede solo dejar de enviar ubicación)
-                signOut(auth).catch(err => console.error(err));
-            }
-            if (watchId) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-            if (userMarker) {
-                map.removeLayer(userMarker);
-                userMarker = null;
+                remove(ref(db, `taxis/${currentUser.uid}`));
+                signOut(auth);
             }
         });
 
-        // ================= COMPARTIR UBICACIÓN EN TIEMPO REAL =================
         function startSharingLocation() {
-            if (!currentUser) return;
+            if (!currentUser || !navigator.geolocation) return;
+            
+            let taxiName = prompt('Ingresa tu identificativo (ej. Unidad 01):', 'Taxi');
+            if (!taxiName) taxiName = 'Taxi';
 
-            // Pedir nombre al usuario (opcional, para identificar el taxi)
-            let taxiName = localStorage.getItem('taxiName');
-            if (!taxiName) {
-                taxiName = prompt('Ingresa un nombre para identificar tu taxi (ej. Radio Taxi 123):', 'Taxi ' + currentUser.uid.substr(0,4));
-                if (!taxiName) taxiName = 'Taxi ' + currentUser.uid.substr(0,4);
-                localStorage.setItem('taxiName', taxiName);
-            }
-
-            if (!navigator.geolocation) {
-                alert('Geolocalización no soportada por tu navegador');
-                return;
-            }
-
-            // Configurar watchPosition para actualizar en tiempo real
             watchId = navigator.geolocation.watchPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    const updateData = {
-                        lat: latitude,
-                        lng: longitude,
-                        name: taxiName,
-                        lastUpdate: Date.now()
-                    };
+                    set(ref(db, `taxis/${currentUser.uid}`), { lat: latitude, lng: longitude, name: taxiName, lastUpdate: Date.now() });
 
-                    // Guardar en Firebase bajo el UID del usuario
-                    const userRef = ref(db, `taxis/${currentUser.uid}`);
-                    set(userRef, updateData).catch(err => console.error(err));
-
-                    // Actualizar o crear marcador propio en el mapa
                     if (userMarker) {
                         userMarker.setLatLng([latitude, longitude]);
                     } else {
-                        userMarker = L.marker([latitude, longitude], {
-                            icon: L.icon({
-                                iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-                                iconSize: [25, 41],
-                                iconAnchor: [12, 41],
-                                popupAnchor: [1, -34],
-                                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
-                            })
-                        }).addTo(map)
-                          .bindPopup(`<b>${taxiName} (tú)</b>`)
-                          .openPopup();
+                        userMarker = L.marker([latitude, longitude]).addTo(map).bindPopup(`<b>${taxiName} (tú)</b>`).openPopup();
+                        map.setView([latitude, longitude], 15);
                     }
                 },
-                (error) => {
-                    alert('Error de geolocalización: ' + error.message);
-                },
-                {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 5000
-                }
+                (error) => alert('Activa tu GPS para compartir ubicación.'),
+                { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
             );
         }
 
-        // ================= CENTRAR MAPA EN MI UBICACIÓN (si hay marcador propio) =================
-        centerMapLink.addEventListener('click', (e) => {
+        document.getElementById('centerMap').addEventListener('click', (e) => {
             e.preventDefault();
-            if (userMarker) {
-                const latlng = userMarker.getLatLng();
-                map.setView(latlng, 15);
-            } else {
-                alert('No hay ubicación propia para centrar');
-            }
+            if (userMarker) map.setView(userMarker.getLatLng(), 15);
         });
 
-        // ================= LIMPIEZA AL CERRAR LA PÁGINA (opcional) =================
         window.addEventListener('beforeunload', () => {
-            if (currentUser) {
-                // Eliminar el nodo del usuario al salir (opcional)
-                const userRef = ref(db, `taxis/${currentUser.uid}`);
-                remove(userRef);
-            }
+            if (currentUser) remove(ref(db, `taxis/${currentUser.uid}`));
         });
     </script>
 </body>
