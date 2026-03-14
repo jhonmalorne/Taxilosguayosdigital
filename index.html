@@ -1,211 +1,302 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Taxi Comunidad Los Guayos - Gestión en Tiempo Real</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
-        header { background: #16213e; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        header h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
-        header h1 i { color: #f0a500; }
-        .user-panel { display: flex; align-items: center; gap: 15px; }
-        .user-panel button { background: #f0a500; border: none; color: #16213e; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
-        .user-panel button:hover { background: #ffb727; transform: scale(1.05); }
-        .user-panel button.danger { background: #e94560; color: white; }
-        .user-panel button.danger:hover { background: #ff6b8b; }
-        .status { background: #0f3460; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; }
-        .status i { margin-right: 5px; color: #4caf50; }
-        main { display: flex; flex: 1; overflow: hidden; }
-        #map { flex: 3; height: 100%; background: #222; }
-        .sidebar { flex: 1; background: #16213e; padding: 1.5rem; overflow-y: auto; border-left: 1px solid #0f3460; }
-        .sidebar h2 { margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; font-size: 1.3rem; color: #f0a500; }
-        .taxi-list { list-style: none; }
-        .taxi-item { background: #0f3460; margin-bottom: 10px; padding: 12px; border-radius: 10px; display: flex; align-items: center; gap: 12px; transition: 0.2s; border-left: 4px solid #f0a500; }
-        .taxi-item .avatar { background: #f0a500; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #16213e; font-weight: bold; font-size: 1.2rem; }
-        .taxi-item .info { flex: 1; }
-        .taxi-item .info .name { font-weight: bold; margin-bottom: 4px; }
-        .taxi-item .info .coords { font-size: 0.8rem; color: #aaa; }
-        .taxi-item .time { font-size: 0.7rem; color: #f0a500; }
-        .taxi-item.own { border-left-color: #4caf50; background: #1a2a4a; }
-        .footer-info { margin-top: 20px; padding-top: 15px; border-top: 1px solid #0f3460; font-size: 0.8rem; text-align: center; color: #888; }
-        .footer-info a { color: #f0a500; text-decoration: none; }
-        .leaflet-popup-content { color: #16213e; }
-        @media (max-width: 768px) { main { flex-direction: column; } #map { height: 60vh; } .sidebar { height: 40vh; } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taxi-Comunidad-Los-Guayos</title>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Firebase (compat para usar initializeApp sencillo) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+body{
+margin:0;
+font-family:Arial,Helvetica,sans-serif;
+background:#f2f2f2;
+}
+
+header{
+background:#f7c600;
+color:#000;
+padding:12px;
+text-align:center;
+font-weight:bold;
+font-size:20px;
+}
+
+#map{
+height:70vh;
+width:100%;
+}
+
+.panel{
+background:white;
+padding:15px;
+}
+
+.panel h3{
+margin-top:0;
+}
+
+input,select,button{
+width:100%;
+padding:8px;
+margin-top:6px;
+margin-bottom:6px;
+border-radius:4px;
+border:1px solid #ccc;
+}
+
+button{
+background:#f7c600;
+border:none;
+font-weight:bold;
+cursor:pointer;
+}
+
+button:hover{
+background:#ffd900;
+}
+
+.whatsapp{
+position:fixed;
+bottom:20px;
+right:20px;
+background:#25D366;
+color:white;
+padding:14px;
+border-radius:50%;
+font-size:22px;
+text-decoration:none;
+}
+</style>
 </head>
+
 <body>
-    <header>
-        <h1><i class="fas fa-taxi"></i> Taxi Comunidad Los Guayos</h1>
-        <div class="user-panel">
-            <div class="status" id="status"><i class="fas fa-circle"></i> Conectando...</div>
-            <button id="registerBtn"><i class="fas fa-user-plus"></i> Conectar como taxi</button>
-            <button id="stopBtn" class="danger" style="display: none;"><i class="fas fa-stop-circle"></i> Desconectar</button>
-        </div>
-    </header>
-    <main>
-        <div id="map"></div>
-        <div class="sidebar">
-            <h2><i class="fas fa-list"></i> Taxis activos</h2>
-            <ul class="taxi-list" id="taxiList">
-                <li style="text-align: center; color: #888;">Esperando datos...</li>
-            </ul>
-            <div class="footer-info">
-                <i class="fas fa-map-marker-alt"></i> Actualización en tiempo real <br><br> <a href="#" id="centerMap">Centrar en mi ubicación</a>
-            </div>
-        </div>
-    </main>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+<header>
+🚕 Taxi-Comunidad-Los-Guayos
+</header>
 
-        // Configuración corregida (API Key con cero y base de datos incluida)
-        const firebaseConfig = {
-            apiKey: "AIzaSyCWAXC_qvJZzY6LbXYGBE2gnxd5vA0QcsA", 
-            authDomain: "taxi-comunidad-los-guayos.firebaseapp.com",
-            databaseURL: "https://taxi-comunidad-los-guayos-default-rtdb.firebaseio.com",
-            projectId: "taxi-comunidad-los-guayos",
-            storageBucket: "taxi-comunidad-los-guayos.firebasestorage.app",
-            messagingSenderId: "178697721594",
-            appId: "1:178697721594:web:69981a06c9b305c6811b43"
-        };
+<div id="map"></div>
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const auth = getAuth(app);
+<div class="panel">
+<h3>Registrar nuevo taxista</h3>
 
-        let map, userMarker = null, watchId = null, currentUser = null, markers = {};
-        const taxiListElement = document.getElementById('taxiList');
-        const registerBtn = document.getElementById('registerBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const statusDiv = document.getElementById('status');
+<input id="nombre" placeholder="Nombre">
+<input id="cedula" placeholder="Cédula">
+<input id="telefono" placeholder="Teléfono">
+<input id="correo" placeholder="Correo">
 
-        function initMap() { 
-            map = L.map('map').setView([10.18, -67.93], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        }
-        initMap();
+<select id="estado">
+<option value="disponible">Disponible</option>
+<option value="ocupado">Ocupado</option>
+</select>
 
-        function updateTaxiList(taxisData) {
-            if (!taxisData) {
-                taxiListElement.innerHTML = '<li style="text-align: center; color: #888;">No hay taxis activos</li>';
-                return;
-            }
-            let html = '';
-            const sorted = Object.entries(taxisData).sort((a, b) => (b[1].lastUpdate || 0) - (a[1].lastUpdate || 0));
+<button onclick="registrarTaxi()">Registrar Taxi</button>
 
-            for (let [uid, taxi] of sorted) {
-                const isOwn = currentUser && uid === currentUser.uid;
-                const lastUpdate = taxi.lastUpdate ? new Date(taxi.lastUpdate).toLocaleTimeString() : 'desconocido';
-                const name = taxi.name || 'Taxi';
-                const avatarLetter = name.charAt(0).toUpperCase();
+<hr>
 
-                html += `
-                    <li class="taxi-item ${isOwn ? 'own' : ''}">
-                        <div class="avatar">${avatarLetter}</div>
-                        <div class="info">
-                            <div class="name">${name} ${isOwn ? '(tú)' : ''}</div>
-                            <div class="coords">${taxi.lat.toFixed(4)}, ${taxi.lng.toFixed(4)}</div>
-                        </div>
-                        <div class="time">${lastUpdate}</div>
-                    </li>
-                `;
-            }
-            taxiListElement.innerHTML = html;
-        }
+<button onclick="actualizarUbicacion()">Actualizar mi ubicación GPS</button>
 
-        const taxisRef = ref(db, 'taxis');
-        onValue(taxisRef, (snapshot) => {
-            const data = snapshot.val();
-            updateTaxiList(data);
+</div>
 
-            if (data) {
-                for (let uid in markers) {
-                    if (!data[uid]) { map.removeLayer(markers[uid]); delete markers[uid]; }
-                }
-                for (let uid in data) {
-                    const taxi = data[uid];
-                    if (uid === currentUser?.uid) continue;
-                    
-                    if (markers[uid]) {
-                        markers[uid].setLatLng([taxi.lat, taxi.lng]);
-                    } else {
-                        const marker = L.marker([taxi.lat, taxi.lng]).addTo(map).bindPopup(`<b>${taxi.name}</b>`);
-                        markers[uid] = marker;
-                    }
-                }
-            } else {
-                for (let uid in markers) map.removeLayer(markers[uid]);
-                markers = {};
-            }
-        });
+<a class="whatsapp" target="_blank" href="https://wa.me/584244525765">💬</a>
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                statusDiv.innerHTML = '<i class="fas fa-circle" style="color: #4caf50;"></i> Conectado';
-                registerBtn.style.display = 'none';
-                stopBtn.style.display = 'flex';
-                startSharingLocation();
-            } else {
-                currentUser = null;
-                statusDiv.innerHTML = '<i class="fas fa-circle"></i> Desconectado';
-                registerBtn.style.display = 'flex';
-                stopBtn.style.display = 'none';
-                if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
-                if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-            }
-        });
+<script>
 
-        registerBtn.addEventListener('click', () => {
-            signInAnonymously(auth).catch(error => alert('Error: ' + error.message));
-        });
+/* ================================
+CONFIGURACION FIREBASE
+================================ */
 
-        stopBtn.addEventListener('click', () => {
-            if (currentUser) {
-                remove(ref(db, `taxis/${currentUser.uid}`));
-                signOut(auth);
-            }
-        });
+const firebaseConfig = {
+apiKey: "AIzaSyDuDZ_uxF6P5OSc_0z7nuC0X_E98hPNsug",
+authDomain: "taxi-comunidad-los-guayos.firebaseapp.com",
+databaseURL: "https://taxi-comunidad-los-guayos-default-rtdb.firebaseio.com",
+projectId: "taxi-comunidad-los-guayos",
+storageBucket: "taxi-comunidad-los-guayos.firebasestorage.app",
+messagingSenderId: "178697721594",
+appId: "1:178697721594:web:69981a06c9b305c6811b43",
+measurementId: "G-5HJPLK3BRJ"
+};
 
-        function startSharingLocation() {
-            if (!currentUser || !navigator.geolocation) return;
-            
-            let taxiName = prompt('Ingresa tu identificativo (ej. Unidad 01):', 'Taxi');
-            if (!taxiName) taxiName = 'Taxi';
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-            watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    set(ref(db, `taxis/${currentUser.uid}`), { lat: latitude, lng: longitude, name: taxiName, lastUpdate: Date.now() });
+/* ================================
+MAPA
+================================ */
 
-                    if (userMarker) {
-                        userMarker.setLatLng([latitude, longitude]);
-                    } else {
-                        userMarker = L.marker([latitude, longitude]).addTo(map).bindPopup(`<b>${taxiName} (tú)</b>`).openPopup();
-                        map.setView([latitude, longitude], 15);
-                    }
-                },
-                (error) => alert('Activa tu GPS para compartir ubicación.'),
-                { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
-            );
-        }
+var map = L.map('map').setView([10.188,-67.930],14);
 
-        document.getElementById('centerMap').addEventListener('click', (e) => {
-            e.preventDefault();
-            if (userMarker) map.setView(userMarker.getLatLng(), 15);
-        });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+attribution:'Mapa'
+}).addTo(map);
 
-        window.addEventListener('beforeunload', () => {
-            if (currentUser) remove(ref(db, `taxis/${currentUser.uid}`));
-        });
-    </script>
+/* ================================
+ICONOS TAXI
+================================ */
+
+var iconDisponible = L.icon({
+iconUrl:"https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
+iconSize:[32,32]
+});
+
+var iconOcupado = L.icon({
+iconUrl:"https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
+iconSize:[32,32],
+className:"taxiRojo"
+});
+
+/* ================================
+MOSTRAR TAXIS
+================================ */
+
+var markers = {};
+
+db.ref("taxistas").on("value",function(snapshot){
+
+let data = snapshot.val();
+
+for(let id in markers){
+map.removeLayer(markers[id]);
+}
+
+markers = {};
+
+for(let id in data){
+
+let taxi = data[id];
+
+let icon = taxi.estado=="ocupado" ? iconOcupado : iconDisponible;
+
+let marker = L.marker([taxi.lat,taxi.lng],{icon:icon}).addTo(map);
+
+marker.bindPopup(
+"<b>"+taxi.nombre+"</b><br>"+
+"📞 "+taxi.telefono+"<br>"+
+"Estado: "+taxi.estado
+);
+
+markers[id]=marker;
+
+}
+
+});
+
+/* ================================
+REGISTRAR TAXI
+================================ */
+
+function registrarTaxi(){
+
+let nombre = document.getElementById("nombre").value;
+let cedula = document.getElementById("cedula").value;
+let telefono = document.getElementById("telefono").value;
+let correo = document.getElementById("correo").value;
+let estado = document.getElementById("estado").value;
+
+navigator.geolocation.getCurrentPosition(function(pos){
+
+let lat = pos.coords.latitude;
+let lng = pos.coords.longitude;
+
+db.ref("taxistas").push({
+nombre:nombre,
+cedula:cedula,
+telefono:telefono,
+correo:correo,
+estado:estado,
+lat:lat,
+lng:lng
+});
+
+alert("Taxi registrado");
+
+});
+
+}
+
+/* ================================
+ACTUALIZAR UBICACION
+================================ */
+
+function actualizarUbicacion(){
+
+navigator.geolocation.getCurrentPosition(function(pos){
+
+let lat = pos.coords.latitude;
+let lng = pos.coords.longitude;
+
+let telefono = prompt("Ingrese su teléfono para actualizar posición");
+
+db.ref("taxistas").once("value",function(snapshot){
+
+snapshot.forEach(function(child){
+
+let taxi = child.val();
+
+if(taxi.telefono==telefono){
+
+child.ref.update({
+lat:lat,
+lng:lng
+});
+
+alert("Ubicación actualizada");
+
+}
+
+});
+
+});
+
+});
+
+}
+
+/* ================================
+PRECARGA DE 20 TAXISTAS
+================================ */
+
+db.ref("taxistas").once("value").then(function(snapshot){
+
+if(!snapshot.exists()){
+
+let nombres=[
+"Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
+"Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
+"Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
+"Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
+"Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
+"Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
+"Jhon Alvarez","Maggie Gonzalez"
+];
+
+for(let i=0;i<nombres.length;i++){
+
+db.ref("taxistas").push({
+nombre:nombres[i],
+cedula:"12345678",
+telefono:"04244525765",
+correo:"jhoncuenta2@gmail.com",
+estado:"disponible",
+lat:10.188+(Math.random()/100),
+lng:-67.930+(Math.random()/100)
+});
+
+}
+
+}
+
+});
+
+</script>
+
 </body>
 </html>
