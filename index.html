@@ -1,295 +1,489 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Taxi-Comunidad-Los-Guayos</title>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-<style>
-
-body{
-margin:0;
-font-family:Arial;
-background:#f5f5f5;
-}
-
-header{
-background:#FFD000;
-padding:15px;
-text-align:center;
-font-size:22px;
-font-weight:bold;
-}
-
-#map{
-height:65vh;
-width:100%;
-}
-
-#pedirTaxi{
-position:fixed;
-bottom:25px;
-right:25px;
-background:#00c853;
-color:white;
-border:none;
-padding:15px 20px;
-border-radius:30px;
-font-size:18px;
-cursor:pointer;
-}
-
-.panel{
-background:white;
-padding:15px;
-}
-
-.taxistaCard{
-background:white;
-border-radius:10px;
-padding:10px;
-margin-bottom:10px;
-box-shadow:0 2px 6px rgba(0,0,0,0.2);
-display:flex;
-gap:10px;
-}
-
-.foto{
-width:80px;
-height:80px;
-background:#ddd;
-border-radius:8px;
-}
-
-.auto{
-width:100%;
-height:100px;
-background:#ddd;
-margin-top:6px;
-border-radius:8px;
-}
-
-.perfil{
-flex:1;
-}
-
-#listaTaxistas{
-display:none;
-padding:10px;
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Taxi Comunidad Los Guayos · Sistema en tiempo real</title>
+    <!-- Leaflet CSS/JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Firebase SDK (modular compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <!-- Font Awesome 6 (gratuito) para iconos de foto -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+        body {
+            background: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            background: #1e3a5f;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            font-weight: 400;
+            font-size: 1.6rem;
+        }
+        header h1 i {
+            margin-right: 10px;
+            color: #ffc107;
+        }
+        .map-container {
+            height: 300px;
+            width: 100%;
+            border-bottom: 4px solid #2c3e50;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+            background: #c8e0e0;
+        }
+        .action-bar {
+            background: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn-pedir {
+            background: #27ae60;
+            border: none;
+            color: white;
+            font-size: 1.4rem;
+            padding: 0.8rem 3rem;
+            border-radius: 50px;
+            box-shadow: 0 4px 8px rgba(39,174,96,0.3);
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border: 2px solid #1e8449;
+        }
+        .btn-pedir i {
+            margin-right: 10px;
+        }
+        .btn-pedir:hover {
+            background: #2ecc71;
+            transform: scale(1.02);
+            box-shadow: 0 8px 12px rgba(46,204,113,0.4);
+        }
+        .main-content {
+            flex: 1;
+            padding: 1.5rem 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .seccion-titulo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            border-left: 8px solid #f39c12;
+            padding-left: 1rem;
+        }
+        .seccion-titulo h2 {
+            color: #1e3a5f;
+            font-weight: 500;
+        }
+        .taxistas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        .taxista-card {
+            background: white;
+            border-radius: 24px;
+            padding: 1.2rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+            transition: 0.2s;
+            border: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .taxista-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        .foto-duo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            background: #ecf0f1;
+            border-radius: 100px;
+            padding: 0.8rem 1.2rem;
+        }
+        .foto-conductor, .foto-auto {
+            text-align: center;
+        }
+        .foto-conductor i, .foto-auto i {
+            font-size: 3.2rem;
+            color: #34495e;
+        }
+        .foto-conductor p, .foto-auto p {
+            font-size: 0.7rem;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+        .info-taxista {
+            border-top: 1px dashed #bdc3c7;
+            padding-top: 0.8rem;
+            margin-bottom: 0.8rem;
+        }
+        .nombre {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+        .edad-placa {
+            display: flex;
+            gap: 1.2rem;
+            margin: 8px 0;
+            color: #4a5568;
+            font-size: 0.95rem;
+        }
+        .edad-placa i {
+            width: 20px;
+            color: #f39c12;
+        }
+        .whatsapp-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 10px 15px;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.95rem;
+            margin-top: 6px;
+            transition: 0.2s;
+        }
+        .whatsapp-btn:hover {
+            background: #20B859;
+        }
+        .buzon {
+            background: linear-gradient(145deg, #fff9e6, #fff2d7);
+            border-radius: 40px;
+            padding: 1.5rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            border: 2px solid #f1c40f;
+            margin-top: 2rem;
+        }
+        .buzon-info h3 {
+            color: #a55d00;
+            font-size: 1.5rem;
+            margin-bottom: 0.3rem;
+        }
+        .buzon-info p {
+            font-size: 1.1rem;
+        }
+        .buzon-wa {
+            background: #f39c12;
+            padding: 0.8rem 2rem;
+            border-radius: 60px;
+            color: #2d2d2d;
+            font-weight: bold;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 8px rgba(243,156,18,0.4);
+        }
+        .buzon-wa i {
+            font-size: 2rem;
+        }
+        footer {
+            background: #1e3a5f;
+            color: #ccc;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+            margin-top: 2rem;
+        }
+        .leaflet-popup-content {
+            font-weight: 500;
+        }
+        /* responsive */
+        @media (max-width: 600px) {
+            .btn-pedir { font-size: 1.2rem; padding: 0.8rem 2rem; }
+            .buzon { flex-direction: column; gap: 1rem; text-align: center; }
+        }
+    </style>
 </head>
-
 <body>
-
-<header>
-🚕 Taxi-Comunidad-Los-Guayos
-</header>
-
-<div id="map"></div>
-
-<button id="pedirTaxi" onclick="mostrarTaxistas()">Pedir Taxi</button>
-
-<div id="listaTaxistas"></div>
-
-<script>
-
-/* ================================
-CONFIGURACION FIREBASE
-================================ */
-
-const firebaseConfig = {
-
-apiKey: "AIzaSyDuDZ_uxF6P5OSc_0z7nuC0X_E98hPNsug",
-authDomain: "taxi-comunidad-los-guayos.firebaseapp.com",
-databaseURL: "https://taxi-comunidad-los-guayos-default-rtdb.firebaseio.com",
-projectId: "taxi-comunidad-los-guayos",
-storageBucket: "taxi-comunidad-los-guayos.firebasestorage.app",
-messagingSenderId: "178697721594",
-appId: "1:178697721594:web:69981a06c9b305c6811b43",
-measurementId: "G-5HJPLK3BRJ"
-
-};
-
-firebase.initializeApp(firebaseConfig);
-
-const db = firebase.database();
-
-/* ================================
-MAPA
-================================ */
-
-var map = L.map('map').setView([10.188,-67.930],14);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-attribution:'Mapa'
-}).addTo(map);
-
-var markers = {};
-
-/* ================================
-ICONO TAXI
-================================ */
-
-var taxiIcon = L.icon({
-iconUrl:"https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
-iconSize:[35,35]
-});
-
-/* ================================
-MOSTRAR TAXIS EN TIEMPO REAL
-================================ */
-
-db.ref("taxistas").on("value",function(snapshot){
-
-var data = snapshot.val();
-
-for(let id in markers){
-
-map.removeLayer(markers[id]);
-
-}
-
-markers={};
-
-for(let id in data){
-
-let taxi = data[id];
-
-let marker = L.marker([taxi.lat,taxi.lng],{icon:taxiIcon}).addTo(map);
-
-marker.bindPopup(
-"<b>"+taxi.nombre+"</b><br>"+
-"Telefono: "+taxi.telefono
-);
-
-markers[id]=marker;
-
-}
-
-});
-
-/* ================================
-MOSTRAR LISTA DE TAXISTAS
-================================ */
-
-function mostrarTaxistas(){
-
-var contenedor = document.getElementById("listaTaxistas");
-
-contenedor.style.display="block";
-
-contenedor.innerHTML="<h3>Taxistas disponibles</h3>";
-
-db.ref("taxistas").once("value",function(snapshot){
-
-snapshot.forEach(function(child){
-
-let taxi = child.val();
-
-let card = document.createElement("div");
-
-card.className="taxistaCard";
-
-card.innerHTML=`
-
-<div class="foto"></div>
-
-<div class="perfil">
-
-<b>${taxi.nombre}</b><br>
-
-Edad: 24 años<br>
-
-Placa: XXXXXXX<br>
-
-Telefono: ${taxi.telefono}<br>
-
-<button onclick="solicitarTaxi('${taxi.telefono}')">
-Solicitar Taxi
-</button>
-
-<div class="auto"></div>
-
-</div>
-
-`;
-
-contenedor.appendChild(card);
-
-});
-
-});
-
-}
-
-/* ================================
-SOLICITAR TAXI
-================================ */
-
-function solicitarTaxi(telefono){
-
-let mensaje = "Hola necesito un taxi en Los Guayos";
-
-let url = "https://wa.me/58"+telefono.substring(1)+"?text="+encodeURIComponent(mensaje);
-
-window.open(url,"_blank");
-
-}
-
-/* ================================
-PRECARGA DE TAXISTAS SI BASE VACIA
-================================ */
-
-db.ref("taxistas").once("value").then(function(snapshot){
-
-if(!snapshot.exists()){
-
-let nombres=[
-
-"Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
-"Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
-"Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
-"Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
-"Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
-"Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
-"Jhon Alvarez","Maggie Gonzalez"
-
-];
-
-for(let i=0;i<nombres.length;i++){
-
-db.ref("taxistas").push({
-
-nombre:nombres[i],
-cedula:"12345678",
-telefono:"04244525765",
-correo:"jhoncuenta2@gmail.com",
-lat:10.188+(Math.random()/100),
-lng:-67.930+(Math.random()/100),
-estado:"disponible"
-
-});
-
-}
-
-}
-
-});
-
-</script>
-
+    <header>
+        <h1><i class="fas fa-map-marked-alt"></i> Taxi Comunidad Los Guayos · Tiempo real</h1>
+        <p style="opacity:0.9;">Conductores verificados • Servicio 24/7</p>
+    </header>
+
+    <!-- MAPA LEaFLET -->
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+
+    <div class="action-bar">
+        <button class="btn-pedir" id="btnPedirTaxi"><i class="fas fa-taxi"></i> ¡PEDIR TAXI AHORA!</button>
+    </div>
+
+    <div class="main-content">
+        <!-- LISTA DE TAXISTAS EN TIEMPO REAL (se llena con Firebase) -->
+        <div class="seccion-titulo" id="lista-taxistas-section">
+            <i class="fas fa-users fa-2x" style="color:#f39c12;"></i>
+            <h2>Taxistas disponibles (20 conductores ejemplo)</h2>
+        </div>
+        <div id="taxistas-container" class="taxistas-grid">
+            <!-- se carga dinámicamente desde Firebase -->
+            <div style="grid-column:1/-1; text-align:center; padding:3rem;">Cargando conductores... <i class="fas fa-spinner fa-pulse"></i></div>
+        </div>
+
+        <!-- BUZÓN ATENCIÓN AL CLIENTE (RECLAMOS/SUGERENCIAS) -->
+        <div class="buzon">
+            <div class="buzon-info">
+                <h3><i class="fas fa-comment-dots"></i> Atención al cliente</h3>
+                <p><strong>Baldwyn Mujica</strong> — reclamos y sugerencias</p>
+            </div>
+            <a href="https://wa.me/584244517644?text=Hola%20Baldwyn%2C%20tengo%20un%20comentario%20sobre%20el%20servicio%20de%20taxi" target="_blank" class="buzon-wa">
+                <i class="fab fa-whatsapp"></i> 0424 4517644
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        <i class="fas fa-leaf"></i> Plataforma gratuita · Datos en tiempo real con Firebase · Los Guayos
+    </footer>
+
+    <script>
+        // --------------------------------------------------------------
+        // CONFIGURACIÓN DE FIREBASE (proporcionada por el usuario)
+        // --------------------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuDZ_uxF6P5OSc_0z7nuC0X_E98hPNsug",
+            authDomain: "taxi-comunidad-los-guayos.firebaseapp.com",
+            databaseURL: "https://taxi-comunidad-los-guayos-default-rtdb.firebaseio.com",
+            projectId: "taxi-comunidad-los-guayos",
+            storageBucket: "taxi-comunidad-los-guayos.firebasestorage.app",
+            messagingSenderId: "178697721594",
+            appId: "1:178697721594:web:69981a06c9b305c6811b43",
+            measurementId: "G-5HJPLK3BRJ"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const driversRef = database.ref('taxistas');
+
+        // --------------------------------------------------------------
+        // VARIABLES GLOBALES Y MAPA
+        // --------------------------------------------------------------
+        let map;
+        let markersLayer = L.layerGroup(); // agrupa marcadores de taxis
+
+        // Centro aproximado de Los Guayos (Venezuela, Carabobo)
+        const LOS_GUAYOS_CENTER = [10.1833, -67.9167]; 
+
+        // Nombres de ejemplo para 20 taxistas (reales venezolanos comunes)
+        const nombresEjemplo = [
+            "Carlos Pérez", "José Martínez", "Luis González", "Andrés Rodríguez",
+            "Juan Hernández", "Mario García", "David Fernández", "Daniel Sánchez",
+            "Jesús Ramírez", "Ricardo Castro", "Pedro Moreno", "Miguel Álvarez",
+            "Ángel Rojas", "Víctor Navarro", "Javier Molina", "Rafael Soto",
+            "Francisco Medina", "Enrique Ortega", "Manuel Delgado", "Santiago Vargas"
+        ];
+
+        // Número de whatsapp genérico para todos (el proporcionado: 04244525765 → +58 424 4525765)
+        const WHATSAPP_GENERICO = "584244525765"; // sin + y sin espacios
+
+        // Placa genérica con formato variable para cada uno
+        function generarPlaca() {
+            const letras = "ABCDFGHJKLMNPRSTVWXYZ";
+            let placa = "";
+            for (let i = 0; i < 3; i++) placa += letras[Math.floor(Math.random() * letras.length)];
+            placa += Math.floor(Math.random() * 10);
+            placa += Math.floor(Math.random() * 10);
+            placa += Math.floor(Math.random() * 10);
+            return placa;
+        }
+
+        // Generar una posición aleatoria cercana a Los Guayos (radio ~1.5km)
+        function randomNearbyPosition() {
+            const lat = LOS_GUAYOS_CENTER[0] + (Math.random() - 0.5) * 0.03;
+            const lng = LOS_GUAYOS_CENTER[1] + (Math.random() - 0.5) * 0.03;
+            return { lat, lng };
+        }
+
+        // --------------------------------------------------------------
+        // INICIALIZAR MAPA (Leaflet)
+        // --------------------------------------------------------------
+        function initMap() {
+            map = L.map('map').setView(LOS_GUAYOS_CENTER, 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+            markersLayer.addTo(map);
+        }
+
+        // --------------------------------------------------------------
+        // POBLAR BASE DE DATOS CON 20 TAXISTAS SI ESTÁ VACÍA
+        // --------------------------------------------------------------
+        function seedDatabaseIfEmpty() {
+            driversRef.once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    console.log("Base vacía. Sembrando 20 taxistas de ejemplo...");
+                    const nuevosTaxistas = {};
+                    for (let i = 0; i < 20; i++) {
+                        const pos = randomNearbyPosition();
+                        const key = `taxista_${i+1}`; // usar claves legibles (push también funciona)
+                        nuevosTaxistas[key] = {
+                            nombre: nombresEjemplo[i % nombresEjemplo.length] + (i >= nombresEjemplo.length ? ` ${i+1}` : ''),
+                            edad: 24,                       // edad genérica
+                            placa: generarPlaca(),
+                            whatsapp: WHATSAPP_GENERICO,    // mismo número para todos (ejemplo)
+                            fotoConductor: "",              // placeholder con ícono
+                            fotoAuto: "",
+                            lat: pos.lat,
+                            lng: pos.lng,
+                            activo: true
+                        };
+                    }
+                    driversRef.set(nuevosTaxistas)
+                        .then(() => console.log("20 taxistas de ejemplo creados."))
+                        .catch(err => console.error("Error al sembrar:", err));
+                } else {
+                    console.log("La base ya tiene datos. Usando existentes.");
+                }
+            });
+        }
+
+        // --------------------------------------------------------------
+        // RENDERIZAR TARJETAS DE TAXISTAS Y ACTUALIZAR MAPA
+        // --------------------------------------------------------------
+        function renderTaxistas(snapshot) {
+            const container = document.getElementById('taxistas-container');
+            if (!snapshot.exists()) {
+                container.innerHTML = '<div style="grid-column:1/-1; text-align:center;">No hay taxistas registrados. Pronto se agregarán.</div>';
+                markersLayer.clearLayers();
+                return;
+            }
+
+            const taxistas = snapshot.val();
+            let html = '';
+            const marcadores = []; // para luego añadirlos al mapa
+
+            // Limpiar marcadores anteriores
+            markersLayer.clearLayers();
+
+            for (let id in taxistas) {
+                const t = taxistas[id];
+                // Generar las cards
+                html += `
+                    <div class="taxista-card" data-id="${id}">
+                        <div class="foto-duo">
+                            <div class="foto-conductor">
+                                <i class="fas fa-user-circle"></i>
+                                <p>conductor</p>
+                            </div>
+                            <div class="foto-auto">
+                                <i class="fas fa-car-side"></i>
+                                <p>vehículo</p>
+                            </div>
+                        </div>
+                        <div class="info-taxista">
+                            <div class="nombre">${t.nombre || 'Conductor'}</div>
+                            <div class="edad-placa">
+                                <span><i class="fas fa-calendar-alt"></i> ${t.edad || 24} años</span>
+                                <span><i class="fas fa-id-card"></i> ${t.placa || 'XXXXXXX'}</span>
+                            </div>
+                        </div>
+                        <a href="https://wa.me/${t.whatsapp || WHATSAPP_GENERICO}?text=Hola%20${encodeURIComponent(t.nombre || 'taxista')}%2C%20te%20hablo%20desde%20la%20app%20de%20Taxi%20Los%20Guayos%20para%20pedir%20un%20servicio." target="_blank" class="whatsapp-btn">
+                            <i class="fab fa-whatsapp"></i> Contactar por WhatsApp
+                        </a>
+                    </div>
+                `;
+
+                // Crear marcador para el mapa si tiene lat/lng
+                if (t.lat && t.lng) {
+                    const marker = L.marker([t.lat, t.lng]).bindPopup(`
+                        <b>${t.nombre || 'Taxista'}</b><br>
+                        <i class="fas fa-car"></i> ${t.placa || 'XXXX'}<br>
+                        <a href="https://wa.me/${t.whatsapp || WHATSAPP_GENERICO}" target="_blank" style="color:#25D366;">📲 Contactar</a>
+                    `);
+                    markersLayer.addLayer(marker);
+                }
+            }
+
+            container.innerHTML = html;
+        }
+
+        // --------------------------------------------------------------
+        // CONFIGURAR LISTENER EN TIEMPO REAL (value)
+        // --------------------------------------------------------------
+        function escucharTaxistas() {
+            driversRef.on('value', (snapshot) => {
+                renderTaxistas(snapshot);
+            }, (error) => {
+                console.error("Error en Firebase listener:", error);
+                document.getElementById('taxistas-container').innerHTML = '<div style="color:red;">Error al cargar datos en tiempo real. Verifica conexión.</div>';
+            });
+        }
+
+        // --------------------------------------------------------------
+        // BOTÓN "PEDIR TAXI": desplazamiento suave hacia la lista
+        // --------------------------------------------------------------
+        document.getElementById('btnPedirTaxi').addEventListener('click', function() {
+            document.getElementById('lista-taxistas-section').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+            // efecto de destello en la lista (opcional)
+            const container = document.getElementById('taxistas-container');
+            container.style.transition = 'box-shadow 0.3s';
+            container.style.boxShadow = '0 0 0 4px #f39c12';
+            setTimeout(() => container.style.boxShadow = 'none', 800);
+        });
+
+        // --------------------------------------------------------------
+        // INICIO DE TODO
+        // --------------------------------------------------------------
+        window.addEventListener('load', () => {
+            initMap();
+            // Sembrar datos si es necesario (no bloqueante)
+            seedDatabaseIfEmpty();
+            // Empezar a escuchar cambios en tiempo real
+            escucharTaxistas();
+        });
+    </script>
+
+    <!-- (Opcional) pequeños ajustes para que los iconos se vean mejor -->
+    <style>
+        .foto-conductor i, .foto-auto i { font-size: 2.8rem; }
+        .taxista-card .whatsapp-btn { width: 100%; }
+        .leaflet-popup-content .fa-whatsapp { color: #25D366; }
+    </style>
 </body>
-
 </html>
