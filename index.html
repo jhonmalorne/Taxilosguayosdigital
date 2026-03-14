@@ -1,37 +1,51 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Taxi-Comunidad-Los-Guayos</title>
 
-<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Firebase (compat para usar initializeApp sencillo) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
+
 body{
 margin:0;
-font-family:Arial,Helvetica,sans-serif;
-background:#f2f2f2;
+font-family:Arial;
+background:#f5f5f5;
 }
 
 header{
-background:#f7c600;
-color:#000;
-padding:12px;
+background:#FFD000;
+padding:15px;
 text-align:center;
+font-size:22px;
 font-weight:bold;
-font-size:20px;
 }
 
 #map{
-height:70vh;
+height:65vh;
 width:100%;
+}
+
+#pedirTaxi{
+position:fixed;
+bottom:25px;
+right:25px;
+background:#00c853;
+color:white;
+border:none;
+padding:15px 20px;
+border-radius:30px;
+font-size:18px;
+cursor:pointer;
 }
 
 .panel{
@@ -39,42 +53,42 @@ background:white;
 padding:15px;
 }
 
-.panel h3{
-margin-top:0;
+.taxistaCard{
+background:white;
+border-radius:10px;
+padding:10px;
+margin-bottom:10px;
+box-shadow:0 2px 6px rgba(0,0,0,0.2);
+display:flex;
+gap:10px;
 }
 
-input,select,button{
+.foto{
+width:80px;
+height:80px;
+background:#ddd;
+border-radius:8px;
+}
+
+.auto{
 width:100%;
-padding:8px;
+height:100px;
+background:#ddd;
 margin-top:6px;
-margin-bottom:6px;
-border-radius:4px;
-border:1px solid #ccc;
+border-radius:8px;
 }
 
-button{
-background:#f7c600;
-border:none;
-font-weight:bold;
-cursor:pointer;
+.perfil{
+flex:1;
 }
 
-button:hover{
-background:#ffd900;
+#listaTaxistas{
+display:none;
+padding:10px;
 }
 
-.whatsapp{
-position:fixed;
-bottom:20px;
-right:20px;
-background:#25D366;
-color:white;
-padding:14px;
-border-radius:50%;
-font-size:22px;
-text-decoration:none;
-}
 </style>
+
 </head>
 
 <body>
@@ -85,28 +99,9 @@ text-decoration:none;
 
 <div id="map"></div>
 
-<div class="panel">
-<h3>Registrar nuevo taxista</h3>
+<button id="pedirTaxi" onclick="mostrarTaxistas()">Pedir Taxi</button>
 
-<input id="nombre" placeholder="Nombre">
-<input id="cedula" placeholder="Cédula">
-<input id="telefono" placeholder="Teléfono">
-<input id="correo" placeholder="Correo">
-
-<select id="estado">
-<option value="disponible">Disponible</option>
-<option value="ocupado">Ocupado</option>
-</select>
-
-<button onclick="registrarTaxi()">Registrar Taxi</button>
-
-<hr>
-
-<button onclick="actualizarUbicacion()">Actualizar mi ubicación GPS</button>
-
-</div>
-
-<a class="whatsapp" target="_blank" href="https://wa.me/584244525765">💬</a>
+<div id="listaTaxistas"></div>
 
 <script>
 
@@ -115,6 +110,7 @@ CONFIGURACION FIREBASE
 ================================ */
 
 const firebaseConfig = {
+
 apiKey: "AIzaSyDuDZ_uxF6P5OSc_0z7nuC0X_E98hPNsug",
 authDomain: "taxi-comunidad-los-guayos.firebaseapp.com",
 databaseURL: "https://taxi-comunidad-los-guayos-default-rtdb.firebaseio.com",
@@ -123,9 +119,11 @@ storageBucket: "taxi-comunidad-los-guayos.firebasestorage.app",
 messagingSenderId: "178697721594",
 appId: "1:178697721594:web:69981a06c9b305c6811b43",
 measurementId: "G-5HJPLK3BRJ"
+
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const db = firebase.database();
 
 /* ================================
@@ -138,49 +136,42 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 attribution:'Mapa'
 }).addTo(map);
 
-/* ================================
-ICONOS TAXI
-================================ */
-
-var iconDisponible = L.icon({
-iconUrl:"https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
-iconSize:[32,32]
-});
-
-var iconOcupado = L.icon({
-iconUrl:"https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
-iconSize:[32,32],
-className:"taxiRojo"
-});
-
-/* ================================
-MOSTRAR TAXIS
-================================ */
-
 var markers = {};
+
+/* ================================
+ICONO TAXI
+================================ */
+
+var taxiIcon = L.icon({
+iconUrl:"https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
+iconSize:[35,35]
+});
+
+/* ================================
+MOSTRAR TAXIS EN TIEMPO REAL
+================================ */
 
 db.ref("taxistas").on("value",function(snapshot){
 
-let data = snapshot.val();
+var data = snapshot.val();
 
 for(let id in markers){
+
 map.removeLayer(markers[id]);
+
 }
 
-markers = {};
+markers={};
 
 for(let id in data){
 
 let taxi = data[id];
 
-let icon = taxi.estado=="ocupado" ? iconOcupado : iconDisponible;
-
-let marker = L.marker([taxi.lat,taxi.lng],{icon:icon}).addTo(map);
+let marker = L.marker([taxi.lat,taxi.lng],{icon:taxiIcon}).addTo(map);
 
 marker.bindPopup(
 "<b>"+taxi.nombre+"</b><br>"+
-"📞 "+taxi.telefono+"<br>"+
-"Estado: "+taxi.estado
+"Telefono: "+taxi.telefono
 );
 
 markers[id]=marker;
@@ -190,50 +181,16 @@ markers[id]=marker;
 });
 
 /* ================================
-REGISTRAR TAXI
+MOSTRAR LISTA DE TAXISTAS
 ================================ */
 
-function registrarTaxi(){
+function mostrarTaxistas(){
 
-let nombre = document.getElementById("nombre").value;
-let cedula = document.getElementById("cedula").value;
-let telefono = document.getElementById("telefono").value;
-let correo = document.getElementById("correo").value;
-let estado = document.getElementById("estado").value;
+var contenedor = document.getElementById("listaTaxistas");
 
-navigator.geolocation.getCurrentPosition(function(pos){
+contenedor.style.display="block";
 
-let lat = pos.coords.latitude;
-let lng = pos.coords.longitude;
-
-db.ref("taxistas").push({
-nombre:nombre,
-cedula:cedula,
-telefono:telefono,
-correo:correo,
-estado:estado,
-lat:lat,
-lng:lng
-});
-
-alert("Taxi registrado");
-
-});
-
-}
-
-/* ================================
-ACTUALIZAR UBICACION
-================================ */
-
-function actualizarUbicacion(){
-
-navigator.geolocation.getCurrentPosition(function(pos){
-
-let lat = pos.coords.latitude;
-let lng = pos.coords.longitude;
-
-let telefono = prompt("Ingrese su teléfono para actualizar posición");
+contenedor.innerHTML="<h3>Taxistas disponibles</h3>";
 
 db.ref("taxistas").once("value",function(snapshot){
 
@@ -241,18 +198,35 @@ snapshot.forEach(function(child){
 
 let taxi = child.val();
 
-if(taxi.telefono==telefono){
+let card = document.createElement("div");
 
-child.ref.update({
-lat:lat,
-lng:lng
-});
+card.className="taxistaCard";
 
-alert("Ubicación actualizada");
+card.innerHTML=`
 
-}
+<div class="foto"></div>
 
-});
+<div class="perfil">
+
+<b>${taxi.nombre}</b><br>
+
+Edad: 24 años<br>
+
+Placa: XXXXXXX<br>
+
+Telefono: ${taxi.telefono}<br>
+
+<button onclick="solicitarTaxi('${taxi.telefono}')">
+Solicitar Taxi
+</button>
+
+<div class="auto"></div>
+
+</div>
+
+`;
+
+contenedor.appendChild(card);
 
 });
 
@@ -261,7 +235,21 @@ alert("Ubicación actualizada");
 }
 
 /* ================================
-PRECARGA DE 20 TAXISTAS
+SOLICITAR TAXI
+================================ */
+
+function solicitarTaxi(telefono){
+
+let mensaje = "Hola necesito un taxi en Los Guayos";
+
+let url = "https://wa.me/58"+telefono.substring(1)+"?text="+encodeURIComponent(mensaje);
+
+window.open(url,"_blank");
+
+}
+
+/* ================================
+PRECARGA DE TAXISTAS SI BASE VACIA
 ================================ */
 
 db.ref("taxistas").once("value").then(function(snapshot){
@@ -269,6 +257,7 @@ db.ref("taxistas").once("value").then(function(snapshot){
 if(!snapshot.exists()){
 
 let nombres=[
+
 "Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
 "Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
 "Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
@@ -276,18 +265,21 @@ let nombres=[
 "Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
 "Jhon Alvarez","Maggie Gonzalez","Baldwyn Mujica",
 "Jhon Alvarez","Maggie Gonzalez"
+
 ];
 
 for(let i=0;i<nombres.length;i++){
 
 db.ref("taxistas").push({
+
 nombre:nombres[i],
 cedula:"12345678",
 telefono:"04244525765",
 correo:"jhoncuenta2@gmail.com",
-estado:"disponible",
 lat:10.188+(Math.random()/100),
-lng:-67.930+(Math.random()/100)
+lng:-67.930+(Math.random()/100),
+estado:"disponible"
+
 });
 
 }
@@ -299,4 +291,5 @@ lng:-67.930+(Math.random()/100)
 </script>
 
 </body>
+
 </html>
